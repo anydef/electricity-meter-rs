@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="homelab@192.168.3.50:22" type="ssh/sftp" uuid="8c6abed4-ca7e-47da-b814-8a43e8224df6">
+        <config>
+          <option name="projectRootOnTarget" value="$PROJECT_DIR$/../../../../homelab/electricity-meter-rs" />
+          <option name="serverName" value="homelab@192.168.3.50:22 agent" />
+          <option name="useRsync" value="true" />
+        </config>
+        <ContributedStateBase type="RsLanguageRuntime">
+          <config>
+            <option name="cargoPath" value="$PROJECT_DIR$/../../../../homelab/.cargo/bin/cargo" />
+            <option name="cargoVersion" value="1.84.1 (66221abde 2024-11-19)" />
+            <option name="rustcPath" value="$PROJECT_DIR$/../../../../homelab/.cargo/bin/rustc" />
+            <option name="rustcVersion" value="1.84.1 (e71f9a9a9 2025-01-27)" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

@@ -1,0 +1,15 @@
+[package]
+name = "electricity_meter_rs"
+version = "0.1.0"
+edition = "2021"
+default-run = "electricity_meter_rs"
+
+[dependencies]
+actix-web = "4"
+serialport = "4.7.1"
+sml-rs = "0.4.0"
+tokio = { version = "1", features = ["full"] }
+
+[[bin]]
+name = "read-serial"
+path = "src/lib/read_serial.rs"
