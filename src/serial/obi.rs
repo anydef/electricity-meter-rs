@@ -1,16 +1,11 @@
-use sml_rs::parser::common::Value;
-use sml_rs::parser::complete::File;
-use sml_rs::parser::complete::MessageBody::GetListResponse;
-use sml_rs::parser::OctetStr;
-use sml_rs::ReadParsedError;
 use std::collections::HashMap;
-use std::fmt;
-use std::fmt::{Display, Formatter, UpperHex};
 use std::sync::OnceLock;
-// use obi_names::ObiNames::DeviceIdentification;
-// use electricity_meter_rs::obi_names::ObiNames::DeviceIdentification;
 
-#[derive(Debug, PartialEq)]
+pub enum ReadingType {
+    Total,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum ObiNames {
     DeviceIdentification,
     MeterReadingTotal,
@@ -49,10 +44,10 @@ pub enum ObiNames {
 
 #[derive(Debug)]
 pub struct Obi {
-    id: [u8; 6],
-    pretty_name: &'static str,
-    metric_name: &'static str,
-    exportable: bool,
+    pub id: [u8; 6],
+    pub pretty_name: &'static str,
+    pub metric_name: &'static str,
+    pub exportable: bool,
 }
 
 impl ObiNames {
@@ -61,7 +56,7 @@ impl ObiNames {
             ObiNames::DeviceIdentification => Obi {
                 id: [0x01, 0x00, 0x00, 0x00, 0x09, 0xff],
                 pretty_name: "Geräteeinzelidentifikation",
-                metric_name: "Geräteeinzelidentifikation",
+                metric_name: "deviceidentification",
                 exportable: false,
             },
             ObiNames::MeterReadingTotal => Obi {
@@ -265,8 +260,7 @@ impl ObiNames {
 }
 
 static OBI_LOOKUP: OnceLock<HashMap<[u8; 6], ObiNames>> = OnceLock::new();
-
-fn get_lookup_map() -> &'static HashMap<[u8; 6], ObiNames> {
+pub fn get_lookup_map() -> &'static HashMap<[u8; 6], ObiNames> {
     OBI_LOOKUP.get_or_init(|| {
         let mut map = HashMap::new();
         map.insert(
@@ -345,76 +339,14 @@ fn get_lookup_map() -> &'static HashMap<[u8; 6], ObiNames> {
     })
 }
 
+pub fn exportable_obis() -> Vec<Obi> {
+    get_lookup_map()
+        .values()
+        .filter(|obi| obi.obi().exportable)
+        .map(|obi| obi.obi())
+        .collect()
+}
+
 pub fn lookup_obi_name(id: &[u8; 6]) -> Option<&'static ObiNames> {
     get_lookup_map().get(id)
-}
-
-#[derive(PartialEq, Debug)]
-struct OctSlice<'a>(OctetStr<'a>);
-
-impl Display for OctSlice<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // Iterate over each byte and write it as two-digit hex.
-        for byte in self.0.iter() {
-            write!(f, "{:02X} ", byte)?;
-        }
-        Ok(())
-    }
-}
-
-impl UpperHex for OctSlice<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for byte in self.0.iter() {
-            write!(f, "{:02X} ", byte)?;
-        }
-        Ok(())
-    }
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dbg!("Hello, world!");
-
-    let port_name = "/dev/serial0";
-    let baud_rate = 9600;
-    let timeout = std::time::Duration::from_secs(10);
-
-    let port = serialport::new(port_name, baud_rate)
-        .timeout(timeout)
-        .open()
-        .expect("Failed to open port");
-
-    let mut reader = sml_rs::SmlReader::from_reader(port);
-
-    loop {
-        match reader.read::<File>() {
-            Ok(file) => {
-                for m in file.messages {
-                    if let GetListResponse(list_entry) = m.message_body {
-                        for val in list_entry.val_list {
-                            let id = OctSlice(val.obj_name);
-                            if let Ok(id_array) = id.0.try_into() {
-                                if let Some(obi) = lookup_obi_name(&id_array) {
-                                    if obi.obi().exportable {
-                                        if let Value::I64(value) = val.value {
-                                            println!("{}: {:}", obi.obi().pretty_name, value);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Err(ReadParsedError::IoErr(e, _)) => {
-                println!("IO error: {:?}", e);
-                println!("Exiting...");
-                break;
-            }
-            Err(e) => {
-                println!("Error: {:?}", e);
-            }
-        }
-    }
-
-    Ok(())
 }

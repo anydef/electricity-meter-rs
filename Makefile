@@ -4,10 +4,13 @@ build:
 	cross build --target arm-unknown-linux-musleabi --release
 
 deploy:
-	scp ./target/arm-unknown-linux-musleabi/release/electricity-meter-rs $(TARGET_MACHINE):$(TARGET_PATH)
+	scp ./target/arm-unknown-linux-musleabi/release/electricity_meter_rs $(TARGET_MACHINE):$(TARGET_PATH)
 	scp ./target/arm-unknown-linux-musleabi/release/read-serial $(TARGET_MACHINE):$(TARGET_PATH)
 
 run-remote:
 	ssh -t $(TARGET_MACHINE) "cd $(TARGET_PATH) && ./read-serial"
 
 run-all: build deploy run-remote
+
+start-webserver: build deploy
+	ssh -t $(TARGET_MACHINE) "cd $(TARGET_PATH) && ./electricity_meter_rs"
