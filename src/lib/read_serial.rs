@@ -1,3 +1,4 @@
+use sml_rs::parser::common::Value;
 use sml_rs::parser::complete::File;
 use sml_rs::parser::complete::MessageBody::GetListResponse;
 use sml_rs::parser::OctetStr;
@@ -45,80 +46,221 @@ pub enum ObiNames {
     ManufacturerIdentification,
     PublicKey,
 }
+
+#[derive(Debug)]
+pub struct Obi {
+    id: [u8; 6],
+    pretty_name: &'static str,
+    metric_name: &'static str,
+    exportable: bool,
+}
+
 impl ObiNames {
-    pub fn pretty_name(&self) -> &'static str {
+    pub fn obi(&self) -> Obi {
         match self {
-            ObiNames::DeviceIdentification => "Geräteeinzelidentifikation",
-            ObiNames::MeterReadingTotal => "Zählerstand Total",
-            ObiNames::MeterReadingTariff1 => "Zählerstand Tarif 1",
-            ObiNames::MeterReadingTariff2 => "Zählerstand Tarif 2",
-            ObiNames::TotalMeterReading => "Total-Zählerstand",
-            ObiNames::ActivePowerTotal => "Wirkenergie Total",
-            ObiNames::ActivePowerCurrent => "aktuelle Wirkleistung",
-            ObiNames::ReactivePowerL1 => "Momentanblindleistung L1",
-            ObiNames::CurrentL1 => "Strom L1",
-            ObiNames::VoltageL1 => "Spannung L1",
-            ObiNames::ActivePowerL1 => "Wirkleistung L1",
-            ObiNames::ReactivePowerL2 => "Momentanblindleistung L2",
-            ObiNames::CurrentL2 => "Strom L2",
-            ObiNames::VoltageL2 => "Spannung L2",
-            ObiNames::ActivePowerL2 => "Wirkleistung L2",
-            ObiNames::ReactivePowerL3 => "Momentanblindleistung L3",
-            ObiNames::CurrentL3 => "Strom L3",
-            ObiNames::VoltageL3 => "Spannung L3",
-            ObiNames::ActivePowerL3 => "Wirkleistung L3",
-            ObiNames::PhaseDeviationL1L2 => "Phasenausgleich L1-L2",
-            ObiNames::PhaseDeviationL1L3 => "Phasenausgleich L1-L3",
-            ObiNames::PhaseDeviationL1 => "Phasenausgleich L1",
-            ObiNames::PhaseDeviationL2 => "Phasenausgleich L2",
-            ObiNames::PhaseDeviationL3 => "Phasenausgleich L3",
-            ObiNames::ChipTemperatureCurrent => "Chip-Temperatur aktuell",
-            ObiNames::ChipTemperatureMin => "Chip-Temperatur minimal",
-            ObiNames::ChipTemperatureMax => "Chip-Temperatur maximal",
-            ObiNames::ChipTemperatureAvg => "Chip-Temperatur durchschnittlich",
-            ObiNames::VoltageMin => "Spannung minimal",
-            ObiNames::VoltageMax => "Spannung maximal",
-            ObiNames::NetworkFrequency => "Netzfrequenz",
-            ObiNames::ManufacturerIdentification => "Herstelleridentifikation",
-            ObiNames::PublicKey => "Öffentlicher Schlüssel",
+            ObiNames::DeviceIdentification => Obi {
+                id: [0x01, 0x00, 0x00, 0x00, 0x09, 0xff],
+                pretty_name: "Geräteeinzelidentifikation",
+                metric_name: "Geräteeinzelidentifikation",
+                exportable: false,
+            },
+            ObiNames::MeterReadingTotal => Obi {
+                id: [0x01, 0x00, 0x01, 0x08, 0x00, 0xff],
+                pretty_name: "Zählerstand Total",
+                metric_name: "meterreadingtotal",
+                exportable: true,
+            },
+            ObiNames::MeterReadingTariff1 => Obi {
+                id: [0x01, 0x00, 0x01, 0x08, 0x01, 0xff],
+                pretty_name: "Zählerstand Tarif 1",
+                metric_name: "meterreadingtariff1",
+                exportable: true,
+            },
+            ObiNames::MeterReadingTariff2 => Obi {
+                id: [0x01, 0x00, 0x01, 0x08, 0x02, 0xff],
+                pretty_name: "Zählerstand Tarif 2",
+                metric_name: "meterreadingtariff2",
+                exportable: true,
+            },
+            ObiNames::TotalMeterReading => Obi {
+                id: [0x01, 0x00, 0x01, 0x11, 0x00, 0xff],
+                pretty_name: "Total-Zählerstand",
+                metric_name: "totalmeterreading",
+                exportable: false,
+            },
+            ObiNames::ActivePowerTotal => Obi {
+                id: [0x01, 0x00, 0x02, 0x08, 0x00, 0xff],
+                pretty_name: "Wirkenergie Total",
+                metric_name: "activepowertotal",
+                exportable: true,
+            },
+            ObiNames::ActivePowerCurrent => Obi {
+                id: [0x01, 0x00, 0x10, 0x07, 0x00, 0xff],
+                pretty_name: "aktuelle Wirkleistung",
+                metric_name: "activepowercurrent",
+                exportable: false,
+            },
+            ObiNames::ReactivePowerL1 => Obi {
+                id: [0x01, 0x00, 0x17, 0x07, 0x00, 0xff],
+                pretty_name: "Momentanblindleistung L1",
+                metric_name: "reactivepowerl1",
+                exportable: false,
+            },
+            ObiNames::CurrentL1 => Obi {
+                id: [0x01, 0x00, 0x1f, 0x07, 0x00, 0xff],
+                pretty_name: "Strom L1",
+                metric_name: "currentl1",
+                exportable: false,
+            },
+            ObiNames::VoltageL1 => Obi {
+                id: [0x01, 0x00, 0x20, 0x07, 0x00, 0xff],
+                pretty_name: "Spannung L1",
+                metric_name: "voltagel1",
+                exportable: false,
+            },
+            ObiNames::ActivePowerL1 => Obi {
+                id: [0x01, 0x00, 0x24, 0x07, 0x00, 0xff],
+                pretty_name: "Wirkleistung L1",
+                metric_name: "activepowerl1",
+                exportable: false,
+            },
+            ObiNames::ReactivePowerL2 => Obi {
+                id: [0x01, 0x00, 0x2b, 0x07, 0x00, 0xff],
+                pretty_name: "Momentanblindleistung L2",
+                metric_name: "reactivepowerl2",
+                exportable: false,
+            },
+            ObiNames::CurrentL2 => Obi {
+                id: [0x01, 0x00, 0x33, 0x07, 0x00, 0xff],
+                pretty_name: "Strom L2",
+                metric_name: "currentl2",
+                exportable: false,
+            },
+            ObiNames::VoltageL2 => Obi {
+                id: [0x01, 0x00, 0x34, 0x07, 0x00, 0xff],
+                pretty_name: "Spannung L2",
+                metric_name: "voltagel2",
+                exportable: false,
+            },
+            ObiNames::ActivePowerL2 => Obi {
+                id: [0x01, 0x00, 0x38, 0x07, 0x00, 0xff],
+                pretty_name: "Wirkleistung L2",
+                metric_name: "activepowerl2",
+                exportable: false,
+            },
+            ObiNames::ReactivePowerL3 => Obi {
+                id: [0x01, 0x00, 0x3f, 0x07, 0x00, 0xff],
+                pretty_name: "Momentanblindleistung L3",
+                metric_name: "reactivepowerl3",
+                exportable: false,
+            },
+            ObiNames::CurrentL3 => Obi {
+                id: [0x01, 0x00, 0x47, 0x07, 0x00, 0xff],
+                pretty_name: "Strom L3",
+                metric_name: "currentl3",
+                exportable: false,
+            },
+            ObiNames::VoltageL3 => Obi {
+                id: [0x01, 0x00, 0x48, 0x07, 0x00, 0xff],
+                pretty_name: "Spannung L3",
+                metric_name: "voltagel3",
+                exportable: false,
+            },
+            ObiNames::ActivePowerL3 => Obi {
+                id: [0x01, 0x00, 0x4c, 0x07, 0x00, 0xff],
+                pretty_name: "Wirkleistung L3",
+                metric_name: "activepowerl3",
+                exportable: false,
+            },
+            ObiNames::PhaseDeviationL1L2 => Obi {
+                id: [0x01, 0x00, 0x51, 0x07, 0x01, 0xff],
+                pretty_name: "Phasenausgleich L1-L2",
+                metric_name: "phasedeviationl1l2",
+                exportable: false,
+            },
+            ObiNames::PhaseDeviationL1L3 => Obi {
+                id: [0x01, 0x00, 0x51, 0x07, 0x02, 0xff],
+                pretty_name: "Phasenausgleich L1-L3",
+                metric_name: "phasedeviationl1l3",
+                exportable: false,
+            },
+            ObiNames::PhaseDeviationL1 => Obi {
+                id: [0x01, 0x00, 0x51, 0x07, 0x04, 0xff],
+                pretty_name: "Phasenausgleich L1",
+                metric_name: "phasedeviationl1",
+                exportable: false,
+            },
+            ObiNames::PhaseDeviationL2 => Obi {
+                id: [0x01, 0x00, 0x51, 0x07, 0x0f, 0xff],
+                pretty_name: "Phasenausgleich L2",
+                metric_name: "phasedeviationl2",
+                exportable: false,
+            },
+            ObiNames::PhaseDeviationL3 => Obi {
+                id: [0x01, 0x00, 0x51, 0x07, 0x1a, 0xff],
+                pretty_name: "Phasenausgleich L3",
+                metric_name: "phasedeviationl3",
+                exportable: false,
+            },
+            ObiNames::ChipTemperatureCurrent => Obi {
+                id: [0x01, 0x00, 0x60, 0x32, 0x00, 0x02],
+                pretty_name: "Chip-Temperatur aktuell",
+                metric_name: "chiptemperaturecurrent",
+                exportable: false,
+            },
+            ObiNames::ChipTemperatureMin => Obi {
+                id: [0x01, 0x00, 0x60, 0x32, 0x00, 0x03],
+                pretty_name: "Chip-Temperatur minimal",
+                metric_name: "chiptemperaturemin",
+                exportable: false,
+            },
+            ObiNames::ChipTemperatureMax => Obi {
+                id: [0x01, 0x00, 0x60, 0x32, 0x00, 0x04],
+                pretty_name: "Chip-Temperatur maximal",
+                metric_name: "chiptemperaturemax",
+                exportable: false,
+            },
+            ObiNames::ChipTemperatureAvg => Obi {
+                id: [0x01, 0x00, 0x60, 0x32, 0x00, 0x05],
+                pretty_name: "Chip-Temperatur durchschnittlich",
+                metric_name: "chiptemperatureavg",
+                exportable: false,
+            },
+            ObiNames::VoltageMin => Obi {
+                id: [0x01, 0x00, 0x60, 0x32, 0x03, 0x03],
+                pretty_name: "Spannung minimal",
+                metric_name: "voltagemin",
+                exportable: false,
+            },
+            ObiNames::VoltageMax => Obi {
+                id: [0x01, 0x00, 0x60, 0x32, 0x03, 0x04],
+                pretty_name: "Spannung maximal",
+                metric_name: "voltagemax",
+                exportable: false,
+            },
+            ObiNames::NetworkFrequency => Obi {
+                id: [0x01, 0x00, 0x0e, 0x07, 0x00, 0xff],
+                pretty_name: "Netzfrequenz",
+                metric_name: "networkfrequency",
+                exportable: false,
+            },
+            ObiNames::ManufacturerIdentification => Obi {
+                id: [0x81, 0x81, 0xc7, 0x82, 0x03, 0xff],
+                pretty_name: "Herstelleridentifikation",
+                metric_name: "manufactureridentification",
+                exportable: false,
+            },
+            ObiNames::PublicKey => Obi {
+                id: [0x81, 0x81, 0xc7, 0x82, 0x05, 0xff],
+                pretty_name: "Öffentlicher Schlüssel",
+                metric_name: "publickey",
+                exportable: false,
+            },
         }
     }
+
     pub fn id(&self) -> [u8; 6] {
-        match self {
-            ObiNames::DeviceIdentification => [0x01, 0x00, 0x00, 0x00, 0x09, 0xff],
-            ObiNames::MeterReadingTotal => [0x01, 0x00, 0x01, 0x08, 0x00, 0xff],
-            ObiNames::MeterReadingTariff1 => [0x01, 0x00, 0x01, 0x08, 0x01, 0xff],
-            ObiNames::MeterReadingTariff2 => [0x01, 0x00, 0x01, 0x08, 0x02, 0xff],
-            ObiNames::TotalMeterReading => [0x01, 0x00, 0x01, 0x11, 0x00, 0xff],
-            ObiNames::ActivePowerTotal => [0x01, 0x00, 0x02, 0x08, 0x00, 0xff],
-            ObiNames::ActivePowerCurrent => [0x01, 0x00, 0x10, 0x07, 0x00, 0xff],
-            ObiNames::ReactivePowerL1 => [0x01, 0x00, 0x17, 0x07, 0x00, 0xff],
-            ObiNames::CurrentL1 => [0x01, 0x00, 0x1f, 0x07, 0x00, 0xff],
-            ObiNames::VoltageL1 => [0x01, 0x00, 0x20, 0x07, 0x00, 0xff],
-            ObiNames::ActivePowerL1 => [0x01, 0x00, 0x24, 0x07, 0x00, 0xff],
-            ObiNames::ReactivePowerL2 => [0x01, 0x00, 0x2b, 0x07, 0x00, 0xff],
-            ObiNames::CurrentL2 => [0x01, 0x00, 0x33, 0x07, 0x00, 0xff],
-            ObiNames::VoltageL2 => [0x01, 0x00, 0x34, 0x07, 0x00, 0xff],
-            ObiNames::ActivePowerL2 => [0x01, 0x00, 0x38, 0x07, 0x00, 0xff],
-            ObiNames::ReactivePowerL3 => [0x01, 0x00, 0x3f, 0x07, 0x00, 0xff],
-            ObiNames::CurrentL3 => [0x01, 0x00, 0x47, 0x07, 0x00, 0xff],
-            ObiNames::VoltageL3 => [0x01, 0x00, 0x48, 0x07, 0x00, 0xff],
-            ObiNames::ActivePowerL3 => [0x01, 0x00, 0x4c, 0x07, 0x00, 0xff],
-            ObiNames::PhaseDeviationL1L2 => [0x01, 0x00, 0x51, 0x07, 0x01, 0xff],
-            ObiNames::PhaseDeviationL1L3 => [0x01, 0x00, 0x51, 0x07, 0x02, 0xff],
-            ObiNames::PhaseDeviationL1 => [0x01, 0x00, 0x51, 0x07, 0x04, 0xff],
-            ObiNames::PhaseDeviationL2 => [0x01, 0x00, 0x51, 0x07, 0x0f, 0xff],
-            ObiNames::PhaseDeviationL3 => [0x01, 0x00, 0x51, 0x07, 0x1a, 0xff],
-            ObiNames::ChipTemperatureCurrent => [0x01, 0x00, 0x60, 0x32, 0x00, 0x02],
-            ObiNames::ChipTemperatureMin => [0x01, 0x00, 0x60, 0x32, 0x00, 0x03],
-            ObiNames::ChipTemperatureMax => [0x01, 0x00, 0x60, 0x32, 0x00, 0x04],
-            ObiNames::ChipTemperatureAvg => [0x01, 0x00, 0x60, 0x32, 0x00, 0x05],
-            ObiNames::VoltageMin => [0x01, 0x00, 0x60, 0x32, 0x03, 0x03],
-            ObiNames::VoltageMax => [0x01, 0x00, 0x60, 0x32, 0x03, 0x04],
-            ObiNames::NetworkFrequency => [0x01, 0x00, 0x0e, 0x07, 0x00, 0xff],
-            ObiNames::ManufacturerIdentification => [0x81, 0x81, 0xc7, 0x82, 0x03, 0xff],
-            ObiNames::PublicKey => [0x81, 0x81, 0xc7, 0x82, 0x05, 0xff],
-        }
+        self.obi().id
     }
 }
 
@@ -246,38 +388,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         match reader.read::<File>() {
             Ok(file) => {
-                // println!("{:?}", file);
                 for m in file.messages {
-                    // println!("Message: {:?}", m);
-                    match m.message_body {
-                        GetListResponse(list_entry) => {
-                            // println!("ListEntry: {:?}", list_entry);
-                            for val in list_entry.val_list {
-                                let id = OctSlice(val.obj_name);
-                                if let Ok(id_array) = id.0.try_into() {
-                                    if let Some(obi) = lookup_obi_name(&id_array) {
-                                        if obi == &ObiNames::TotalMeterReading {
-                                            println!("{}: {:?}", obi.pretty_name(), val.value);
+                    if let GetListResponse(list_entry) = m.message_body {
+                        for val in list_entry.val_list {
+                            let id = OctSlice(val.obj_name);
+                            if let Ok(id_array) = id.0.try_into() {
+                                if let Some(obi) = lookup_obi_name(&id_array) {
+                                    if obi.obi().exportable {
+                                        if let Value::I64(value) = val.value {
+                                            println!("{}: {:}", obi.obi().pretty_name, value);
                                         }
-                                        println!(
-                                            "Found: {} - {:?} {}",
-                                            obi.pretty_name(),
-                                            obi,
-                                            obi.pretty_name()
-                                        );
-                                    } else {
-                                        println!("Unknown ID: {:?}", id);
                                     }
                                 }
-
-                                // if s.eq(DeviceIdentification) {
-                                //
-                                // }
-                                // println!("{:02X}", id);
                             }
-                        }
-                        _ => {
-                            // println!("Other message: {:?}", m);
                         }
                     }
                 }
