@@ -1,9 +1,11 @@
-use crate::serial::obi::exportable_obis;
+extern crate core;
+
+use crate::metrics::Metrics;
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 use actix_web_prom::PrometheusMetricsBuilder;
-use prometheus::{opts, Counter};
 use std::collections::HashMap;
 
+mod metrics;
 mod serial;
 
 #[actix_web::main]
@@ -16,39 +18,17 @@ async fn main() -> std::io::Result<()> {
     let serial_port = serial::config::SerialConfig::new(port_name, baud_rate, timeout).open();
 
     let labels = HashMap::new();
-
     let prometheus = PrometheusMetricsBuilder::new("api")
         .endpoint("/metrics")
         .const_labels(labels)
         .build()
         .unwrap();
-    let counters = exportable_obis()
-        .iter()
-        .map(|x| {
-            let counter =
-                Counter::with_opts(opts!(x.metric_name, x.pretty_name).namespace("meter")).unwrap();
-            prometheus
-                .registry
-                .register(Box::new(counter.clone()))
-                .unwrap();
-            (x.id, counter)
-        })
-        .collect::<HashMap<[u8; 6], Counter>>();
-
-    // counters.iter().for_each(|x| {
-    //     prometheus.registry.register(Box::new(x.)).unwrap();
-    // });
+    let metrics = Metrics::new(&prometheus.registry);
 
     let reading_meter_data = async move {
         println!("Starting reading meter data"); // Print "Hello" to the console
 
-        serial::meter::read_meter(serial_port, counters);
-        // loop {
-        //     println!("Hello!!!"); // Print "Hello" to the console
-        //                           // counter.inc();
-        //     counter_clone.inc_by(100.0);
-        //     time::sleep(Duration::from_secs(60)).await; // Wait for 60 seconds
-        // }
+        serial::meter::read_meter(serial_port, &metrics);
     };
     tokio::spawn(reading_meter_data);
 

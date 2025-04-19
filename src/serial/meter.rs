@@ -1,18 +1,27 @@
-// use crate::{obi, OctSlice};
-// use crate::serial::model::OctSlice;
-use crate::serial::model::{OctSlice, Unit};
-use crate::serial::obi;
-use obi::lookup_obi_name;
-use prometheus::Counter;
+use crate::metrics::Metrics;
+use crate::serial::obi::*;
 use serialport::SerialPort;
 use sml_rs::parser::common::Value;
 use sml_rs::parser::complete::File;
 use sml_rs::parser::complete::MessageBody::GetListResponse;
 use sml_rs::ReadParsedError;
-use std::collections::HashMap;
-// mod model;
 
-pub fn read_meter(serial_port: Box<dyn SerialPort>, counters: HashMap<[u8; 6], Counter>) {
+// const DUMMY_GAUGE: Gauge = Gauge::new("dummy", "dummy").unwrap();
+
+fn update_metric<T: Into<f64>>(metrics: &Metrics, obi_id: &[u8; 6], value: T) {
+    // let metric: Gauge = match metrics {
+    //     None => Gauge::new("dummy", "dummy").unwrap(),
+    //     Some(m) => m.active_power_total.clone(),
+    // };
+    if let Some(obi) = lookup_obi_name(obi_id) {
+        let f_value = value.into().clone();
+        // println!("Metric: {:?}", metric);
+        println!("{}:{:}", obi.pretty_name(), f_value);
+        metrics.update_metric(obi, f_value);
+    }
+}
+
+pub fn read_meter(serial_port: Box<dyn SerialPort>, metrics: &Metrics) {
     let port = serial_port;
 
     let mut reader = sml_rs::SmlReader::from_reader(port);
@@ -23,29 +32,11 @@ pub fn read_meter(serial_port: Box<dyn SerialPort>, counters: HashMap<[u8; 6], C
                 for m in file.messages {
                     if let GetListResponse(list_entry) = m.message_body {
                         for val in list_entry.val_list {
-                            let id = OctSlice(val.obj_name);
-                            if let Ok(id_array) = id.0.try_into() {
-                                if let Some(obi) = lookup_obi_name(&id_array) {
-                                    if let Some(counter) = counters.get(&obi.id()) {
-                                        if let Value::I64(value) = val.value {
-                                            if let Some(unit) = val.unit {
-                                                let u = Unit::try_from(unit as u8);
-                                                if u.is_ok() {}
-                                                // val.unit as u8;
-                                            }
-                                            // if let Value::I8(unit) = val.unit {
-                                            //     // println!("{}: {:}", obi.obi().pretty_name, value);
-                                            //     Unit::try_from(val.unit as u8).unwrap();
-                                            // }
-                                            println!(
-                                                "{}: {:} {:?}",
-                                                obi.obi().metric_name,
-                                                value,
-                                                val.unit
-                                            );
-                                            // counter.inc_by(value as f64);
-                                        }
-                                    }
+                            if let Ok(obi_id) = val.obj_name.try_into() as Result<&[u8; 6], _> {
+                                match val.value {
+                                    Value::I64(v) => update_metric(metrics, obi_id, v as f64),
+                                    Value::U32(v) => update_metric(metrics, obi_id, v as f64),
+                                    _ => {}
                                 }
                             }
                         }
