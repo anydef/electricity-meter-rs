@@ -1,0 +1,31 @@
+# place in /etc/systemd/system/whatever.service and install with `systemd install whatever.service`
+# note that if you change this file you will need to run `systemctl daemon-reload` to get systemd to notice
+[Unit]
+Description=Electricity meter webservice
+
+# After networking because we need that
+After=network.target
+
+[Service]
+
+# Simple services don't do any forking / background nonsence
+Type=simple
+
+# User with which to run the service
+User=homelab
+
+# Any setup we need to do, specifying the shell because otherwise who knows what's up
+ExecStartPre=/bin/bash -c 'echo "Starting the service..."'
+
+# Set the working directory for the application
+WorkingDirectory=/home/homelab/electricity-meter-rs/
+
+# Command to run the application
+ExecStart=/home/homelab/electricity-meter-rs/electricity_meter_rs
+
+# Restart policy, only on failure
+Restart=on-failure
+
+[Install]
+# Start the service before we get to multi-user mode
+WantedBy=multi-user.target

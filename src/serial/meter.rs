@@ -6,24 +6,15 @@ use sml_rs::parser::complete::File;
 use sml_rs::parser::complete::MessageBody::GetListResponse;
 use sml_rs::ReadParsedError;
 
-// const DUMMY_GAUGE: Gauge = Gauge::new("dummy", "dummy").unwrap();
-
 fn update_metric<T: Into<f64>>(metrics: &Metrics, obi_id: &[u8; 6], value: T) {
-    // let metric: Gauge = match metrics {
-    //     None => Gauge::new("dummy", "dummy").unwrap(),
-    //     Some(m) => m.active_power_total.clone(),
-    // };
     if let Some(obi) = lookup_obi_name(obi_id) {
-        let f_value = value.into().clone();
-        // println!("Metric: {:?}", metric);
-        println!("{}:{:}", obi.pretty_name(), f_value);
+        let f_value = value.into();
         metrics.update_metric(obi, f_value);
     }
 }
 
 pub fn read_meter(serial_port: Box<dyn SerialPort>, metrics: &Metrics) {
     let port = serial_port;
-
     let mut reader = sml_rs::SmlReader::from_reader(port);
 
     loop {

@@ -30,7 +30,7 @@ async fn main() -> std::io::Result<()> {
 
         serial::meter::read_meter(serial_port, &metrics);
     };
-    tokio::spawn(reading_meter_data);
+    actix_web::rt::spawn(reading_meter_data);
 
     HttpServer::new(move || App::new().wrap(prometheus.clone()).service(health))
         .bind(("0.0.0.0", 8080))?
