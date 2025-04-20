@@ -25,5 +25,3 @@ update-systemd: systemd-stop
 	scp ./root/etc/systemd/system/electricity-meter.service $(TARGET_MACHINE):$(TARGET_PATH)
 	ssh -t $(TARGET_MACHINE) "sudo cp $(TARGET_PATH)/electricity-meter.service /etc/systemd/system/"
 	ssh -t $(TARGET_MACHINE) "sudo systemctl start electricity-meter.service"
-
-#	ssh -t $(TARGET_MACHINE) "sudo systemctl restart read-serial.service"

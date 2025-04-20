@@ -28,19 +28,37 @@ impl Default for Metrics {
 
 impl Metrics {
     pub fn new(registry: &prometheus::Registry) -> Self {
-        let meter_reading_total =
-            Gauge::new("meter_reading_total", "Total meter reading. Unit {}").unwrap();
-        let meter_reading_tariff1 =
-            Gauge::new("meter_reading_tariff1", "Tariff 1 meter reading").unwrap();
-        let meter_reading_tariff2 =
-            Gauge::new("meter_reading_tariff2", "Tariff 2 meter reading").unwrap();
+        let meter_reading_total = Gauge::new(
+            "electricity_meter_reading_total",
+            "Total meter reading. Unit {}",
+        )
+        .unwrap();
+        let meter_reading_tariff1 = Gauge::new(
+            "electricity_meter_reading_tariff1",
+            "Tariff 1 meter reading",
+        )
+        .unwrap();
+        let meter_reading_tariff2 = Gauge::new(
+            "electricity_meter_reading_tariff2",
+            "Tariff 2 meter reading",
+        )
+        .unwrap();
         let active_power_total = Gauge::new("active_power_total", "Total active power").unwrap();
-        let active_power_tariff1 =
-            Gauge::new("active_power_tariff1", "Tariff 1 active power").unwrap();
-        let active_power_tariff2 =
-            Gauge::new("active_power_tariff2", "Tariff 2 active power").unwrap();
-        let active_power_current =
-            Gauge::new("active_power_current", "Current active power").unwrap();
+        let active_power_tariff1 = Gauge::new(
+            "electricity_meter_active_power_tariff1",
+            "Tariff 1 active power",
+        )
+        .unwrap();
+        let active_power_tariff2 = Gauge::new(
+            "electricity_meter_active_power_tariff2",
+            "Tariff 2 active power",
+        )
+        .unwrap();
+        let active_power_current = Gauge::new(
+            "electricity_meter_active_power_current",
+            "Current active power",
+        )
+        .unwrap();
 
         registry
             .register(Box::new(meter_reading_total.clone()))
