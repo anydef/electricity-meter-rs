@@ -43,7 +43,8 @@ impl Metrics {
             "Tariff 2 meter reading",
         )
         .unwrap();
-        let active_power_total = Gauge::new("active_power_total", "Total active power").unwrap();
+        let active_power_total =
+            Gauge::new("electricity_meter_active_power_total", "Total active power").unwrap();
         let active_power_tariff1 = Gauge::new(
             "electricity_meter_active_power_tariff1",
             "Tariff 1 active power",
@@ -59,7 +60,6 @@ impl Metrics {
             "Current active power",
         )
         .unwrap();
-
         registry
             .register(Box::new(meter_reading_total.clone()))
             .unwrap();
@@ -95,31 +95,31 @@ impl Metrics {
 
     pub fn update_metric(&self, message: &ObiType, value: f64) {
         match message {
-            ObiType::DeviceIdentification(_) => {
+            ObiType::DeviceIdentification => {
                 self.meter_reading_total.set(value);
             }
-            ObiType::ManufacturerIdentification(_) => {
+            ObiType::ManufacturerIdentification => {
                 self.meter_reading_tariff1.set(value);
             }
-            ObiType::MeterReadingTotal(_) => {
+            ObiType::MeterReadingTotal => {
                 self.meter_reading_total.set(value);
             }
-            ObiType::MeterReadingTariff1(_) => {
+            ObiType::MeterReadingTariff1 => {
                 self.meter_reading_tariff1.set(value);
             }
-            ObiType::MeterReadingTariff2(_) => {
+            ObiType::MeterReadingTariff2 => {
                 self.meter_reading_tariff2.set(value);
             }
-            ObiType::ActivePowerTotal(_) => {
+            ObiType::ActivePowerTotal => {
                 self.active_power_total.set(value);
             }
-            ObiType::ActivePowerTariff1(_) => {
+            ObiType::ActivePowerTariff1 => {
                 self.active_power_tariff1.set(value);
             }
-            ObiType::ActivePowerTariff2(_) => {
+            ObiType::ActivePowerTariff2 => {
                 self.active_power_tariff2.set(value);
             }
-            ObiType::ActivePowerCurrent(_) => {
+            ObiType::ActivePowerCurrent => {
                 self.active_power_current.set(value);
             }
         }
