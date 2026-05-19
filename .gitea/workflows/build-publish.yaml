@@ -2,8 +2,6 @@ name: Build and Publish
 
 on:
   push:
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -36,12 +34,14 @@ jobs:
         run: make package
 
       - name: Upload binaries to Gitea release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: akkuman/gitea-release-action@v1
         with:
           files: dist/*.tar.gz
           token: ${{ env.GITEA_TOKEN }}
 
       - name: Publish crate to Gitea cargo registry
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           _OP_LOADED: "1"
         run: make publish
