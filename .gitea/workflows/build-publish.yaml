@@ -1,0 +1,46 @@
+name: Build and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Cross-build and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets
+        uses: 1password/load-secrets-action@v3
+        with:
+          export-env: true
+        env:
+          OP_CONNECT_HOST: ${{ vars.OP_CONNECT_HOST }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          OP_ENV_FILE: .env.tpl
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: arm-unknown-linux-musleabi
+
+      - name: Install cross
+        run: cargo install cross --locked
+
+      - name: Cross-build and package
+        run: make package
+
+      - name: Upload binaries to Gitea release
+        uses: akkuman/gitea-release-action@v1
+        with:
+          files: dist/*.tar.gz
+          token: ${{ env.GITEA_TOKEN }}
+
+      - name: Publish crate to Gitea cargo registry
+        env:
+          _OP_LOADED: "1"
+        run: make publish

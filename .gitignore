@@ -23,3 +23,10 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+# build-tools clone + packaged artifacts + secrets
+.build/
+/dist/
+.env
+Makefile.bak
+/electricity-meter-rs.iml

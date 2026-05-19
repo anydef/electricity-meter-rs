@@ -1,1 +1,4 @@
 [target.arm-unknown-linux-musleabi]
+
+[registries.gitea]
+index = "sparse+https://gitea.lab.anydef.de/api/packages/anydef/cargo/"
