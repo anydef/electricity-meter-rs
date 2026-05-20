@@ -4,6 +4,13 @@ on:
   push:
   workflow_dispatch:
 
+env:
+  # Make cross use a custom target image (with cargo/rustup baked in) and skip
+  # bind-mounting host's $CARGO_HOME, which doesn't translate through the
+  # runner's DinD docker socket.
+  CROSS_CUSTOM_TOOLCHAIN: "1"
+  CROSS_TARGET_ARM_UNKNOWN_LINUX_MUSLEABI_IMAGE: registry.lab.anydef.de/cross-arm-unknown-linux-musleabi:latest
+
 jobs:
   release:
     name: Cross-build and release
@@ -11,14 +18,6 @@ jobs:
     container:
       image: registry.lab.anydef.de/act-runner-rust:latest
     steps:
-      - name: Verify runner image
-        run: |
-          echo "PATH=$PATH"
-          which cargo                  && cargo --version                  || echo "cargo missing"
-          which arm-linux-musleabi-gcc && arm-linux-musleabi-gcc --version || echo "ARM gcc missing"
-          echo "LINKER=${CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABI_LINKER:-unset}"
-          echo "CC=${CC_arm_unknown_linux_musleabi:-unset}"
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -32,8 +31,6 @@ jobs:
           OP_ENV_FILE: .env.tpl
 
       - name: Cross-build and package
-        env:
-          CARGO_BUILD: cargo
         run: make package
 
       - name: Upload binaries to Gitea release
