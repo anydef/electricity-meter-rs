@@ -111,11 +111,17 @@ ci-package:
 # Makefile removes the need for `tea`/`curl`/`jq` plumbing here.
 
 ## Publish crate, tolerating "already exists" so version bumps are the trigger.
+## Gitea's cargo registry expects an `Authorization: Bearer <token>` header, so
+## prepend "Bearer " if the loaded token isn't already prefixed.
 ci-publish: $(BUILD_TOOLS_DIR)/load-env-tpl.sh
 	@$(LOAD_ENV) \
 	if [ -z "$$CARGO_REGISTRIES_GITEA_TOKEN" ]; then \
 		echo "CARGO_REGISTRIES_GITEA_TOKEN is not set"; exit 1; \
 	fi; \
+	case "$$CARGO_REGISTRIES_GITEA_TOKEN" in \
+		Bearer\ *) ;; \
+		*) export CARGO_REGISTRIES_GITEA_TOKEN="Bearer $$CARGO_REGISTRIES_GITEA_TOKEN" ;; \
+	esac; \
 	out=$$(cargo publish --registry gitea --allow-dirty 2>&1); rc=$$?; \
 	echo "$$out"; \
 	if [ $$rc -ne 0 ] && ! echo "$$out" | grep -qiE "already (exists|uploaded)"; then \
