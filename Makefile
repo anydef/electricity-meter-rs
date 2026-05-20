@@ -11,6 +11,10 @@ BUILD_CONTEXT   := $(CURDIR)
 BUILD_TOOLS_DIR := .build/build-tools
 ENV_FILE        := $(BUILD_CONTEXT)/.env.tpl
 
+# `cross` for local dev; CI overrides to plain `cargo` since the job runtime
+# (the rust-cross-arm-musl image) already provides the cross toolchain.
+CARGO          ?= cross
+
 CARGO_TARGET    := arm-unknown-linux-musleabi
 RELEASE_DIR     := target/$(CARGO_TARGET)/release
 DIST_DIR        := dist
@@ -25,6 +29,7 @@ TARGET_PATH     := /home/homelab/electricity-meter-rs/
 GITEA_BASE_URL  := https://gitea.lab.anydef.de
 GITEA_REPO      := anydef/electricity-meter-rs
 RELEASE_TAG     := v$(PKG_VERSION)
+CI_RELEASE_TAG  := main-$(shell git rev-parse --short HEAD 2>/dev/null)
 
 # Auto-clone build-tools for load-env-tpl.sh.
 $(BUILD_TOOLS_DIR)/load-env-tpl.sh:
@@ -38,7 +43,8 @@ LOAD_ENV = if [ -z "$$_OP_LOADED" ] && [ -f "$(ENV_FILE)" ]; then \
 	fi;
 
 .PHONY: help build package publish release release-upload deploy run-remote \
-        run-all deploy-webserver systemd-start systemd-stop update-systemd
+        run-all deploy-webserver systemd-start systemd-stop update-systemd \
+        ci-build ci-package ci-release-upload ci-publish ci-release tea-login
 
 help:
 	@echo "Targets:"
@@ -54,7 +60,7 @@ help:
 
 ## Cross-compile release binaries
 build:
-	cross build --target $(CARGO_TARGET) --release
+	$(CARGO) build --target $(CARGO_TARGET) --release
 
 ## Tar release binaries for distribution / release upload
 package: build
@@ -87,6 +93,35 @@ release-upload: package tea-login
 
 ## Cut a release: cross-build, upload binary to Gitea, publish crate
 release: release-upload publish
+
+# -----------------------------------------------------------------------------
+# CI targets — invoked from .gitea/workflows/release.yaml.
+# The job runs inside the rust-cross-arm-musl image, so we bypass `cross`
+# and tag the Gitea release by short commit SHA so each main push is unique.
+# -----------------------------------------------------------------------------
+
+ci-build:
+	$(MAKE) CARGO=cargo build
+
+ci-package:
+	$(MAKE) CARGO=cargo package
+
+ci-release-upload:
+	$(MAKE) CARGO=cargo RELEASE_TAG=$(CI_RELEASE_TAG) release-upload
+
+## Publish crate, tolerating "already exists" so version bumps are the trigger.
+ci-publish: $(BUILD_TOOLS_DIR)/load-env-tpl.sh
+	@$(LOAD_ENV) \
+	if [ -z "$$CARGO_REGISTRIES_GITEA_TOKEN" ]; then \
+		echo "CARGO_REGISTRIES_GITEA_TOKEN is not set"; exit 1; \
+	fi; \
+	out=$$(cargo publish --registry gitea --allow-dirty 2>&1); rc=$$?; \
+	echo "$$out"; \
+	if [ $$rc -ne 0 ] && ! echo "$$out" | grep -qiE "already (exists|uploaded)"; then \
+		exit $$rc; \
+	fi
+
+ci-release: ci-release-upload ci-publish
 
 ## scp binaries to the Pi Zero
 deploy: systemd-stop

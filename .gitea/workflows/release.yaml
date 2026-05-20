@@ -1,0 +1,47 @@
+name: Release electricity-meter-rs
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Cross-build + Gitea release + cargo publish
+    runs-on: rust-cross-arm-musl
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets
+        uses: 1password/load-secrets-action@v3
+        with:
+          export-env: true
+        env:
+          OP_CONNECT_HOST: ${{ vars.OP_CONNECT_HOST }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          OP_ENV_FILE: .env.tpl
+
+      - name: Clone build-tools
+        run: make .build/build-tools/load-env-tpl.sh
+
+      - name: Build release binaries
+        env:
+          _OP_LOADED: "1"
+        run: make ci-build
+
+      - name: Package tarball
+        env:
+          _OP_LOADED: "1"
+        run: make ci-package
+
+      - name: Upload to Gitea release
+        env:
+          _OP_LOADED: "1"
+        run: make ci-release-upload
+
+      - name: Publish crate
+        env:
+          _OP_LOADED: "1"
+        run: make ci-publish
