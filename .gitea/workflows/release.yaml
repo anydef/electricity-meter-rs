@@ -36,10 +36,17 @@ jobs:
           _OP_LOADED: "1"
         run: make ci-package
 
+      - name: Compute release tag
+        id: tag
+        run: echo "value=main-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Upload to Gitea release
-        env:
-          _OP_LOADED: "1"
-        run: make ci-release-upload
+        uses: https://gitea.com/actions/release-action@main
+        with:
+          files: |-
+            dist/*.tar.gz
+          api_key: ${{ env.GITEA_TOKEN }}
+          tag: ${{ steps.tag.outputs.value }}
 
       - name: Publish crate
         env:

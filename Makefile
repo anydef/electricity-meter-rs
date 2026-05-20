@@ -44,7 +44,7 @@ LOAD_ENV = if [ -z "$$_OP_LOADED" ] && [ -f "$(ENV_FILE)" ]; then \
 
 .PHONY: help build package publish release release-upload deploy run-remote \
         run-all deploy-webserver systemd-start systemd-stop update-systemd \
-        ci-build ci-package ci-release-upload ci-publish ci-release tea-login
+        ci-build ci-package ci-publish tea-login
 
 help:
 	@echo "Targets:"
@@ -106,27 +106,9 @@ ci-build:
 ci-package:
 	$(MAKE) CARGO=cargo package
 
-## Upload artifacts to a Gitea release via the API (avoids `tea` and its xdg-open quirks).
-ci-release-upload: ci-package
-	@if [ -z "$$GITEA_TOKEN" ]; then echo "GITEA_TOKEN is not set"; exit 1; fi
-	@tag="$(CI_RELEASE_TAG)"; \
-	echo "Creating Gitea release $$tag for $(GITEA_REPO)..."; \
-	resp=$$(curl -fsS -X POST \
-		-H "Authorization: token $$GITEA_TOKEN" \
-		-H "Content-Type: application/json" \
-		-d "$$(jq -nc --arg tag $$tag '{tag_name:$$tag, name:$$tag}')" \
-		"$(GITEA_BASE_URL)/api/v1/repos/$(GITEA_REPO)/releases"); \
-	release_id=$$(echo "$$resp" | jq -r '.id // empty'); \
-	if [ -z "$$release_id" ]; then echo "Failed to create release: $$resp"; exit 1; fi; \
-	echo "Created release id=$$release_id"; \
-	for f in $(DIST_DIR)/*.tar.gz; do \
-		echo "Uploading $$f..."; \
-		curl -fsS -X POST \
-			-H "Authorization: token $$GITEA_TOKEN" \
-			-F "attachment=@$$f" \
-			"$(GITEA_BASE_URL)/api/v1/repos/$(GITEA_REPO)/releases/$$release_id/assets" >/dev/null; \
-	done; \
-	echo "Done."
+# NOTE: the release upload step lives in .gitea/workflows/release.yaml
+# using `https://gitea.com/actions/release-action`. Keeping it out of the
+# Makefile removes the need for `tea`/`curl`/`jq` plumbing here.
 
 ## Publish crate, tolerating "already exists" so version bumps are the trigger.
 ci-publish: $(BUILD_TOOLS_DIR)/load-env-tpl.sh
@@ -140,7 +122,6 @@ ci-publish: $(BUILD_TOOLS_DIR)/load-env-tpl.sh
 		exit $$rc; \
 	fi
 
-ci-release: ci-release-upload ci-publish
 
 ## scp binaries to the Pi Zero
 deploy: systemd-stop
