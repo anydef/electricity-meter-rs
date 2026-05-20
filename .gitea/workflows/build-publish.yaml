@@ -8,6 +8,8 @@ jobs:
   release:
     name: Cross-build and release
     runs-on: ubuntu-latest
+    container:
+      image: registry.lab.anydef.de/act-runner-rust:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,15 +22,6 @@ jobs:
           OP_CONNECT_HOST: ${{ vars.OP_CONNECT_HOST }}
           OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
           OP_ENV_FILE: .env.tpl
-
-      - name: Install Rust + cross
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-            | sh -s -- -y --default-toolchain stable --profile minimal \
-                --target arm-unknown-linux-musleabi
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.cargo/bin:$PATH"
-          cargo install cross --locked
 
       - name: Cross-build and package
         run: make package
