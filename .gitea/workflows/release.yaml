@@ -26,6 +26,11 @@ jobs:
       - name: Clone build-tools
         run: make .build/build-tools/load-env-tpl.sh
 
+      - name: Cache cargo registry + target
+        uses: https://github.com/Swatinem/rust-cache@v2
+        with:
+          key: arm-unknown-linux-musleabi
+
       - name: Build release binaries
         env:
           _OP_LOADED: "1"
