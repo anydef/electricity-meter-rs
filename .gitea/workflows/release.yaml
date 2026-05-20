@@ -41,12 +41,14 @@ jobs:
         run: echo "value=main-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Upload to Gitea release
-        uses: https://gitea.com/actions/release-action@main
+        uses: https://github.com/akkuman/gitea-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ env.GITEA_TOKEN }}
         with:
           files: |-
             dist/*.tar.gz
-          api_key: ${{ env.GITEA_TOKEN }}
-          tag: ${{ steps.tag.outputs.value }}
+          name: ${{ steps.tag.outputs.value }}
+          tag_name: ${{ steps.tag.outputs.value }}
 
       - name: Publish crate
         env:
