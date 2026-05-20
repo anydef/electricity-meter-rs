@@ -106,8 +106,27 @@ ci-build:
 ci-package:
 	$(MAKE) CARGO=cargo package
 
-ci-release-upload:
-	$(MAKE) CARGO=cargo RELEASE_TAG=$(CI_RELEASE_TAG) release-upload
+## Upload artifacts to a Gitea release via the API (avoids `tea` and its xdg-open quirks).
+ci-release-upload: ci-package
+	@if [ -z "$$GITEA_TOKEN" ]; then echo "GITEA_TOKEN is not set"; exit 1; fi
+	@tag="$(CI_RELEASE_TAG)"; \
+	echo "Creating Gitea release $$tag for $(GITEA_REPO)..."; \
+	resp=$$(curl -fsS -X POST \
+		-H "Authorization: token $$GITEA_TOKEN" \
+		-H "Content-Type: application/json" \
+		-d "$$(jq -nc --arg tag $$tag '{tag_name:$$tag, name:$$tag}')" \
+		"$(GITEA_BASE_URL)/api/v1/repos/$(GITEA_REPO)/releases"); \
+	release_id=$$(echo "$$resp" | jq -r '.id // empty'); \
+	if [ -z "$$release_id" ]; then echo "Failed to create release: $$resp"; exit 1; fi; \
+	echo "Created release id=$$release_id"; \
+	for f in $(DIST_DIR)/*.tar.gz; do \
+		echo "Uploading $$f..."; \
+		curl -fsS -X POST \
+			-H "Authorization: token $$GITEA_TOKEN" \
+			-F "attachment=@$$f" \
+			"$(GITEA_BASE_URL)/api/v1/repos/$(GITEA_REPO)/releases/$$release_id/assets" >/dev/null; \
+	done; \
+	echo "Done."
 
 ## Publish crate, tolerating "already exists" so version bumps are the trigger.
 ci-publish: $(BUILD_TOOLS_DIR)/load-env-tpl.sh
