@@ -18,8 +18,24 @@ jobs:
     container:
       image: registry.lab.anydef.de/act-runner-rust:latest
     steps:
+      - name: Debug workspace paths
+        run: |
+          echo "PWD=$PWD"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          echo "--- /proc/mounts (workspace-related) ---"
+          grep -E "workspace|gitea-runner-work|github" /proc/mounts || echo "no matches"
+          echo "--- ls /mnt/user/appdata/gitea-runner-work ---"
+          ls -la /mnt/user/appdata/gitea-runner-work 2>&1 || true
+
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify Cargo.toml resolves to a host-visible path
+        run: |
+          pwd
+          ls -la
+          echo "--- realpath ---"
+          realpath .
 
       - name: Load secrets
         uses: 1password/load-secrets-action@v3
