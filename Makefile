@@ -12,6 +12,10 @@ BUILD_TOOLS_DIR := .build/build-tools
 ENV_FILE        := $(BUILD_CONTEXT)/.env.tpl
 
 CARGO_TARGET    := arm-unknown-linux-musleabi
+# CARGO_BUILD: cross wrapper locally (handles toolchain via docker);
+# in CI we override to `cargo` because cross's DinD volume mounts don't
+# survive translation through the runner's docker socket.
+CARGO_BUILD     ?= cross
 RELEASE_DIR     := target/$(CARGO_TARGET)/release
 DIST_DIR        := dist
 PRIMARY_BIN     := electricity_meter_rs
@@ -54,7 +58,7 @@ help:
 
 ## Cross-compile release binaries
 build:
-	cross build --target $(CARGO_TARGET) --release
+	$(CARGO_BUILD) build --target $(CARGO_TARGET) --release
 
 ## Tar release binaries for distribution / release upload
 package: build
