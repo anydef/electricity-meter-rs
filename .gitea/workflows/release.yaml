@@ -24,7 +24,7 @@ jobs:
           OP_ENV_FILE: .env.tpl
 
       - name: Clone build-tools
-        run: make .build/build-tools/load-env-tpl.sh
+        run: make .build/build-tools/cargo.mk
 
       - name: Cache cargo registry + target
         uses: https://github.com/Swatinem/rust-cache@v2
