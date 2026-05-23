@@ -14,6 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh \
+            | bash -s -- --to /usr/local/bin
+
       - name: Load secrets
         uses: 1password/load-secrets-action@v3
         with:
@@ -23,8 +28,8 @@ jobs:
           OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
           OP_ENV_FILE: .env.tpl
 
-      - name: Clone build-tools
-        run: make .build/build-tools/cargo.mk
+      - name: Bootstrap build-tools
+        run: just _bootstrap
 
       - name: Cache cargo registry + target
         uses: https://github.com/Swatinem/rust-cache@v2
@@ -34,12 +39,12 @@ jobs:
       - name: Build release binaries
         env:
           _OP_LOADED: "1"
-        run: make ci-build
+        run: just ci-build
 
       - name: Package tarball
         env:
           _OP_LOADED: "1"
-        run: make ci-package
+        run: just ci-package
 
       - name: Compute release tag
         id: tag
@@ -58,4 +63,4 @@ jobs:
       - name: Publish crate
         env:
           _OP_LOADED: "1"
-        run: make ci-publish
+        run: just ci-publish
